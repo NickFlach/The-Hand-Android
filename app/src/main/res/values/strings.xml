@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">The Hand</string>
+
+    <!-- Entry Types -->
+    <string name="entry_type_built">Built</string>
+    <string name="entry_type_helped">Helped</string>
+    <string name="entry_type_learned">Learned</string>
+
+    <!-- Navigation -->
+    <string name="nav_ledger">Ledger</string>
+    <string name="nav_archive">Archive</string>
+    <string name="nav_patterns">Patterns</string>
+    <string name="nav_threads">Threads</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Entry Form -->
+    <string name="entry_what_type">What type?</string>
+    <string name="entry_who_what">Who or what was affected?</string>
+    <string name="entry_what_cost">What did it cost you?</string>
+    <string name="entry_what_differently">What would you do differently?</string>
+
+    <!-- Actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_export">Export</string>
+    <string name="action_add_addendum">Add Addendum</string>
+    <string name="action_share">Share</string>
+
+    <!-- Messages -->
+    <string name="msg_edit_window_expired">24-hour edit window has passed. You can add an addendum instead.</string>
+    <string name="msg_entry_saved">Entry saved</string>
+    <string name="msg_entry_deleted">Entry deleted</string>
+    <string name="msg_no_entries">No entries yet.\n\nYou built something. You helped someone. You learned a hard truth.\n\nWrite it down. Move on.</string>
+
+    <!-- Settings -->
+    <string name="settings_trusted_hands">Trusted Hands</string>
+    <string name="settings_export">Export Data</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_about">About</string>
+
+    <!-- About -->
+    <string name="about_tagline">A private ledger for recording what you built, who you helped, and what you learned.</string>
+    <string name="about_version">Version %s</string>
+    <string name="about_no_scores">No scores. No streaks. No audience.</string>
+</resources>
