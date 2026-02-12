@@ -11,10 +11,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -32,7 +33,7 @@ fun SettingsScreen() {
                 icon = { Icon(Icons.Default.People, "Trusted Hands") },
                 title = "Trusted Hands",
                 subtitle = "Up to 3 people who can witness your entries",
-                onClick = { /* Navigate to Trusted Hands */ }
+                onClick = { navController.navigate("trusted_hands") }
             )
 
             HorizontalDivider()
@@ -42,7 +43,7 @@ fun SettingsScreen() {
                 icon = { Icon(Icons.Default.FileDownload, "Export") },
                 title = "Export Data",
                 subtitle = "Export as plain text or JSON",
-                onClick = { /* Navigate to Export */ }
+                onClick = { navController.navigate("export") }
             )
 
             HorizontalDivider()

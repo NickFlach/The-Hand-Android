@@ -68,7 +68,7 @@ fun TheHandApp() {
             composable(Screen.Archive.route) { ArchiveScreen(navController) }
             composable(Screen.Patterns.route) { PatternsScreen() }
             composable(Screen.Threads.route) { ThreadsScreen(navController) }
-            composable(Screen.Settings.route) { SettingsScreen() }
+            composable(Screen.Settings.route) { SettingsScreen(navController) }
             composable("new_entry") { NewEntryScreen(navController) }
             composable("entry/{entryId}") { backStackEntry ->
                 val entryId = backStackEntry.arguments?.getString("entryId")?.toLongOrNull()
@@ -76,6 +76,8 @@ fun TheHandApp() {
                     EntryDetailScreen(navController, entryId)
                 }
             }
+            composable("export") { ExportScreen(navController) }
+            composable("trusted_hands") { TrustedHandsScreen(navController) }
         }
     }
 }
