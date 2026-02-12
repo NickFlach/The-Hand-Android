@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thehand.android.data.model.Entry
 import com.thehand.android.data.model.EntryType
+import com.thehand.android.data.model.Thread
 import com.thehand.android.data.repository.EntryRepository
+import com.thehand.android.data.repository.ThreadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Instant
 import javax.inject.Inject
@@ -18,40 +18,57 @@ data class NewEntryUiState(
     val whoWhat: String = "",
     val whatCost: String = "",
     val whatDifferently: String = "",
+    val threadId: Long? = null,
+    val availableThreads: List<Thread> = emptyList(),
     val isSaving: Boolean = false,
     val isSaved: Boolean = false
 )
 
 @HiltViewModel
 class NewEntryViewModel @Inject constructor(
-    private val entryRepository: EntryRepository
+    private val entryRepository: EntryRepository,
+    private val threadRepository: ThreadRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(NewEntryUiState())
-    val uiState: StateFlow<NewEntryUiState> = _uiState.asStateFlow()
+    private val _formState = MutableStateFlow(NewEntryUiState())
+
+    val uiState: StateFlow<NewEntryUiState> = combine(
+        _formState,
+        threadRepository.getActiveThreads()
+    ) { form, threads ->
+        form.copy(availableThreads = threads)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = NewEntryUiState()
+    )
 
     fun updateType(type: EntryType) {
-        _uiState.value = _uiState.value.copy(type = type)
+        _formState.value = _formState.value.copy(type = type)
     }
 
     fun updateWhoWhat(value: String) {
-        _uiState.value = _uiState.value.copy(whoWhat = value)
+        _formState.value = _formState.value.copy(whoWhat = value)
     }
 
     fun updateWhatCost(value: String) {
-        _uiState.value = _uiState.value.copy(whatCost = value)
+        _formState.value = _formState.value.copy(whatCost = value)
     }
 
     fun updateWhatDifferently(value: String) {
-        _uiState.value = _uiState.value.copy(whatDifferently = value)
+        _formState.value = _formState.value.copy(whatDifferently = value)
+    }
+
+    fun updateThreadId(threadId: Long?) {
+        _formState.value = _formState.value.copy(threadId = threadId)
     }
 
     fun saveEntry() {
-        val state = _uiState.value
+        val state = _formState.value
         if (state.whoWhat.isBlank() || state.isSaving) return
 
         viewModelScope.launch {
-            _uiState.value = state.copy(isSaving = true)
+            _formState.value = state.copy(isSaving = true)
 
             val entry = Entry(
                 type = state.type,
@@ -60,12 +77,13 @@ class NewEntryViewModel @Inject constructor(
                 whatDifferently = state.whatDifferently,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
-                isLocked = false
+                isLocked = false,
+                threadId = state.threadId
             )
 
             entryRepository.createEntry(entry)
 
-            _uiState.value = state.copy(
+            _formState.value = state.copy(
                 isSaving = false,
                 isSaved = true
             )
@@ -73,6 +91,6 @@ class NewEntryViewModel @Inject constructor(
     }
 
     fun canSave(): Boolean {
-        return _uiState.value.whoWhat.isNotBlank()
+        return uiState.value.whoWhat.isNotBlank()
     }
 }

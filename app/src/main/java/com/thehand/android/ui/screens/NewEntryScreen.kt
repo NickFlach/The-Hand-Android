@@ -121,6 +121,54 @@ fun NewEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
+
+            // Thread selector (optional)
+            if (uiState.availableThreads.isNotEmpty()) {
+                var expanded by remember { mutableStateOf(false) }
+
+                Text(
+                    text = "Link to a Thread (optional)",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = uiState.availableThreads.find { it.id == uiState.threadId }?.name ?: "None",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Thread") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("None") },
+                            onClick = {
+                                viewModel.updateThreadId(null)
+                                expanded = false
+                            }
+                        )
+                        uiState.availableThreads.forEach { thread ->
+                            DropdownMenuItem(
+                                text = { Text(thread.name) },
+                                onClick = {
+                                    viewModel.updateThreadId(thread.id)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
