@@ -14,12 +14,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.thehand.android.data.model.TrustedHand
+import com.thehand.android.ui.viewmodel.TrustedHandsViewModel
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrustedHandsScreen(navController: NavController) {
+fun TrustedHandsScreen(
+    navController: NavController,
+    viewModel: TrustedHandsViewModel = hiltViewModel()
+) {
     var showAddDialog by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -33,10 +42,12 @@ fun TrustedHandsScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true }
-            ) {
-                Icon(Icons.Default.Add, "Add Trusted Hand")
+            if (uiState.canAddMore) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true }
+                ) {
+                    Icon(Icons.Default.Add, "Add Trusted Hand")
+                }
             }
         }
     ) { paddingValues ->
@@ -71,19 +82,47 @@ fun TrustedHandsScreen(navController: NavController) {
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Placeholder for trusted hands
-                item {
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.trustedHands.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = "No Trusted Hands yet",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 16.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.trustedHands) { hand ->
+                        TrustedHandCard(
+                            hand = hand,
+                            onRemove = { viewModel.removeTrustedHand(hand) }
+                        )
+                    }
+
+                    if (uiState.trustedHands.size < 3) {
+                        item {
+                            Text(
+                                text = "You can add ${3 - uiState.trustedHands.size} more ${if (3 - uiState.trustedHands.size == 1) "hand" else "hands"}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -92,11 +131,93 @@ fun TrustedHandsScreen(navController: NavController) {
             AddTrustedHandDialog(
                 onDismiss = { showAddDialog = false },
                 onConfirm = { name, identifier ->
-                    // TODO: Add trusted hand
+                    viewModel.addTrustedHand(name, identifier)
                     showAddDialog = false
                 }
             )
         }
+    }
+}
+
+@Composable
+fun TrustedHandCard(
+    hand: TrustedHand,
+    onRemove: () -> Unit
+) {
+    var showRemoveDialog by remember { mutableStateOf(false) }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        text = hand.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = hand.identifier,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Added ${DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                            .format(hand.addedAt.atZone(java.time.ZoneId.systemDefault()))}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            IconButton(onClick = { showRemoveDialog = true }) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Remove",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+
+    if (showRemoveDialog) {
+        AlertDialog(
+            onDismissRequest = { showRemoveDialog = false },
+            title = { Text("Remove ${hand.name}?") },
+            text = { Text("This person will no longer be able to see entries you've shared with them.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRemove()
+                        showRemoveDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Remove")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -117,13 +238,20 @@ fun AddTrustedHandDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Name") },
+                    placeholder = { Text("e.g., Alex") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = identifier,
                     onValueChange = { identifier = it },
                     label = { Text("Email or Identifier") },
+                    placeholder = { Text("e.g., alex@example.com") },
                     modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = "Note: Actual sharing functionality requires server infrastructure. This stores contact information only.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },
